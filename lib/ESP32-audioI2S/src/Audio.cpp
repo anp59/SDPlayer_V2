@@ -704,7 +704,7 @@ bool Audio::connecttoFS(fs::FS &fs, const char* path, uint32_t resumeFilePos) {
     char* afn = NULL;  // audioFileName
 
 #ifdef SDFATFS_USED
-    audiofile.getName(m_chbuf, sizeof(m_chbuf));
+    audiofile.getName(m_chbuf, 256);    // Annahme, dass Laenge m_chbuf > Laenge audioName!
     afn = strdup(m_chbuf);
 #else
     afn = strdup(audiofile.name());

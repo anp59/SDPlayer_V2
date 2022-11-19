@@ -7,7 +7,9 @@
  */
 
 //#define SDFATFS_USED  // activate for SdFat
-
+//#define SDFAT_FILE_TYPE 1   // * 1 for FAT16/FAT32, 2 for exFAT, 3 for FAT16/FAT32 and exFAT.
+                            // for 2/3 data type audiofile.size() must be uint65_t
+//#define USE_UTF8_LONG_NAMES 1
 
 #pragma once
 #pragma GCC optimize ("Ofast")
@@ -34,8 +36,17 @@
 
 
 #ifdef SDFATFS_USED
-//typedef File32 File;
+// set SDFAT_FILE_TYPE in SdFatConfig.h
+// aktuell nur FILE_TYPE 1 verwendbar. 
+// Fuer 2 und 3 muessen Datentypen fuer fileSize usw. auf 64 Bit angepasst werden
+
+#if SDFAT_FILE_TYPE == 1
+typedef File32 File;
+#elif SDFAT_FILE_TYPE == 2
+typedef ExFile File;
+#elif SDFAT_FILE_TYPE == 3
 typedef FsFile File;
+#endif
 
 namespace fs {
     class FS : public SdFat {

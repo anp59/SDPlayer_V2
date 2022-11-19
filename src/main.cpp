@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include "Preferences.h"
 #include "Audio.h"
-//#include "SD_Libs.h"
 #include "DirPlay.h"
 #include "InputButton.h"
 #include "ESP32Encoder.h"
@@ -80,7 +79,7 @@ size_t PlayNextFile(const char** p, bool next_dir = false) {
         if ( (file_name_pos = dplay.NextFile(p, next_dir)) ) {
             Serial.printf("\n>>> Play %s%s\n", next_dir ? "next dir " : "", *p);
             if ( !audio.connecttoFS(SD, *p) )
-                continue; 
+                continue;
             else
                 digitalWrite(MAX98357A_SD, HIGH); // MAX98357A SD-Mode left channel
             filePlayed = true;
@@ -100,18 +99,15 @@ void setup() {
     pinMode(MAX98357A_SD, OUTPUT);
     digitalWrite(MAX98357A_SD, LOW);    // mute
 
-        Serial.begin(115200);
-
-    // if (!Serial) {       // Wait for USB Serial
-    //     delay(100); 
-    // }
+    Serial.begin(115200);
+    while ( !Serial );
     Serial.println();
-
+    
     if ( !SD.begin(SS, SD_SCK_MHZ(25)) ) {
-        SD.initErrorHalt(); // SdFat-lib helper function
+            SD.initErrorHalt(); // SdFat-lib helper function
     }
     
-    // listDir(SD, "/", 10); 
+    listDir(SD, "/", 10); 
     
     audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);    
     audio.forceMono(true);
@@ -132,7 +128,7 @@ void setup() {
         Serial.printf("Config failed! Ceck the path '%s' / root_path '%s'\nUsing rootpath instead of path!\n", last_filepath, rootpath);
         if ( !dplay.Config(rootpath, rootpath, maxDirDepth) ) { 
             Serial.printf("Config failed! Ceck the rootpath!\n");
-            SysCall::halt();    // SysCall from SdFat-Lib
+            while(1);
         }
     } 
     
@@ -249,15 +245,14 @@ void audio_error_mp3(const char *info) {
     readError = true;
 }
 
-/*
+
 void audio_info(const char *info) {
     Serial.print("info        "); Serial.println(info);
 }
-*/
 
-// void audio_id3data(const char *info) {  //id3 metadata
-//     Serial.print("id3data     "); Serial.println(info);
-// }
+void audio_id3data(const char *info) {  //id3 metadata
+    Serial.print("id3data     "); Serial.println(info);
+}
 
 //###############################################################
 // optional functions for listing directory
