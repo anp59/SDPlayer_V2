@@ -671,7 +671,7 @@ bool Audio::connecttoFS(fs::FS &fs, const char* path, uint32_t resumeFilePos) {
     if(strlen(path)>255) return false;
 
     m_resumeFilePos = resumeFilePos;
-    char audioName[256];
+    //char audioName[256];
     setDefaults(); // free buffers an set defaults
     memcpy(audioName, path, strlen(path)+1);
     if(audioName[0] != '/'){
@@ -682,7 +682,7 @@ bool Audio::connecttoFS(fs::FS &fs, const char* path, uint32_t resumeFilePos) {
     }
 
     AUDIO_INFO("Reading file: \"%s\"", audioName); vTaskDelay(2);
-
+    AUDIO_INFO("audioname=%s", audioName);
     if(fs.exists(audioName)) {
         audiofile = fs.open(audioName); // #86
     }
@@ -701,15 +701,7 @@ bool Audio::connecttoFS(fs::FS &fs, const char* path, uint32_t resumeFilePos) {
     setDatamode(AUDIO_LOCALFILE);
     m_file_size = audiofile.size();//TEST loop
 
-    char* afn = NULL;  // audioFileName
-
-#ifdef SDFATFS_USED
-    audiofile.getName(m_chbuf, 256);    // Annahme, dass Laenge m_chbuf > Laenge audioName!
-    afn = strdup(m_chbuf);
-#else
-    afn = strdup(audiofile.name());
-#endif
-
+    char* afn = strdup(audioName);
     uint8_t dotPos = lastIndexOf(afn, ".");
     for(uint8_t i = dotPos + 1; i < strlen(afn); i++){
         afn[i] = toLowerCase(afn[i]);
@@ -2934,21 +2926,15 @@ void Audio::processLocalFile() {
             return;
         } //TEST loop
 
-#ifdef SDFATFS_USED
-        audiofile.getName(m_chbuf, sizeof(m_chbuf));
-        char *afn =strdup(m_chbuf);
-#else
-        char *afn =strdup(audiofile.name()); // store temporary the name
-#endif
-
+        //char *afn = strdup(audioName);
         stopSong();
         if(m_codec == CODEC_MP3)   MP3Decoder_FreeBuffers();
         if(m_codec == CODEC_AAC)   AACDecoder_FreeBuffers();
         if(m_codec == CODEC_M4A)   AACDecoder_FreeBuffers();
         if(m_codec == CODEC_FLAC) FLACDecoder_FreeBuffers();
-        AUDIO_INFO("End of file \"%s\"", afn);
-        if(audio_eof_mp3) audio_eof_mp3(afn);
-        if(afn) {free(afn); afn = NULL;}
+        AUDIO_INFO("End of file \"%s\"", audioName);
+        if(audio_eof_mp3) audio_eof_mp3(audioName);
+        //if(afn) {free(afn); afn = NULL;}
         return;
     }
 

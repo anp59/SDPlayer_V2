@@ -8,7 +8,7 @@
 
 //#define SDFATFS_USED  // activate for SdFat
 //#define SDFAT_FILE_TYPE 1   // * 1 for FAT16/FAT32, 2 for exFAT, 3 for FAT16/FAT32 and exFAT.
-                            // for 2/3 data type audiofile.size() must be uint65_t
+                            // for 2/3 data type for audiofile.size() and positions must be uint64_t
 //#define USE_UTF8_LONG_NAMES 1
 
 #pragma once
@@ -24,64 +24,69 @@
 #include <vector>
 #include <driver/i2s.h>
 
-#ifdef SDFATFS_USED
-#include <SdFat.h>  // https://github.com/greiman/SdFat
+#ifndef SDFATFS_USED
+    #include <SD.h>
+    #include <SD_MMC.h>
+    #include <SPIFFS.h>
+    #include <FS.h>
+    #include <FFat.h>
+    #define FILE_CLASS File
 #else
-#include <SD.h>
-#include <SD_MMC.h>
-#include <SPIFFS.h>
-#include <FS.h>
-#include <FFat.h>
-#endif // SDFATFS_USED
+    #include <SdFat.h>  // https://github.com/greiman/SdFat
 
+    // set SDFAT_FILE_TYPE in SdFatConfig.h
+    // aktuell nur FILE_TYPE 1 verwendbar. 
+    // Fuer 2 und 3 muessen Datentypen fuer fileSize usw. auf 64 Bit angepasst werden
+    // typedefs hier notwendig, da Mechanismus hinter __has_include(<FS.h>) in SdFat.h nicht korrekt funktioniert
+    #if SDFAT_FILE_TYPE == 1
+        typedef File32 file_t;
+    #elif SDFAT_FILE_TYPE == 2
+        typedef ExFile file_t;
+    #elif SDFAT_FILE_TYPE == 3
+        typedef FsFile file_t;
+    #endif
 
-#ifdef SDFATFS_USED
-// set SDFAT_FILE_TYPE in SdFatConfig.h
-// aktuell nur FILE_TYPE 1 verwendbar. 
-// Fuer 2 und 3 muessen Datentypen fuer fileSize usw. auf 64 Bit angepasst werden
+    namespace fs
+    {
+        class FS : public SdFat
+        {
+        public:
+            bool begin(SdCsPin_t csPin = SS, uint32_t maxSck = SD_SCK_MHZ(25)) { return SdFat::begin(csPin, maxSck); }
+        };
 
-#if SDFAT_FILE_TYPE == 1
-typedef File32 File;
-#elif SDFAT_FILE_TYPE == 2
-typedef ExFile File;
-#elif SDFAT_FILE_TYPE == 3
-typedef FsFile File;
-#endif
+        class SDFATFS : public fs::FS
+        {
+        public:
+            // sdcard_type_t cardType();
+            uint64_t cardSize()
+            {
+                return totalBytes();
+            }
+            uint64_t usedBytes()
+            {
+                // set SdFatConfig MAINTAIN_FREE_CLUSTER_COUNT non-zero. Then only the first call will take time.
+                return (uint64_t)(clusterCount() - freeClusterCount()) * (uint64_t)bytesPerCluster();
+            }
+            uint64_t totalBytes()
+            {
+                return (uint64_t)clusterCount() * (uint64_t)bytesPerCluster();
+            }
+        };
+    }
 
-namespace fs {
-    class FS : public SdFat {
-    public:
-        bool begin(SdCsPin_t csPin = SS, uint32_t maxSck = SD_SCK_MHZ(25)) { return SdFat::begin(csPin, maxSck); }
-    };
+    extern fs::SDFATFS SD_SDFAT;
 
-    class SDFATFS : public fs::FS {
-    public:
-        // sdcard_type_t cardType();
-        uint64_t cardSize() {
-            return totalBytes();
-        }
-        uint64_t usedBytes() {
-            // set SdFatConfig MAINTAIN_FREE_CLUSTER_COUNT non-zero. Then only the first call will take time.
-            return (uint64_t)(clusterCount() - freeClusterCount()) * (uint64_t)bytesPerCluster();
-        }
-        uint64_t totalBytes() {
-            return (uint64_t)clusterCount() * (uint64_t)bytesPerCluster();
-        }
-    };
-}
-
-extern fs::SDFATFS SD_SDFAT;
-
-using namespace fs;
-#define SD SD_SDFAT
+    //using namespace fs;
+    #define SD SD_SDFAT
 #endif //SDFATFS_USED
 
 using namespace std;
 
 
+
 extern __attribute__((weak)) void audio_info(const char*);
 extern __attribute__((weak)) void audio_id3data(const char*); //ID3 metadata
-extern __attribute__((weak)) void audio_id3image(File& file, const size_t pos, const size_t size); //ID3 metadata image
+extern __attribute__((weak)) void audio_id3image(file_t& file, const size_t pos, const size_t size); //ID3 metadata image
 extern __attribute__((weak)) void audio_eof_mp3(const char*); //end of mp3 file
 extern __attribute__((weak)) void audio_showstreamtitle(const char*);
 extern __attribute__((weak)) void audio_showstation(const char*);
@@ -467,7 +472,8 @@ private:
         int pids[4];
     } pid_array;
 
-    File                  audiofile;    // @suppress("Abstract class cannot be instantiated")
+    file_t                audiofile;    // @suppress("Abstract class cannot be instantiated")
+    char                  audioName[256];
     WiFiClient            client;       // @suppress("Abstract class cannot be instantiated")
     WiFiClientSecure      clientsecure; // @suppress("Abstract class cannot be instantiated")
     WiFiClient*           _client = nullptr;

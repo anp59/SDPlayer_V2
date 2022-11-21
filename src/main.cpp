@@ -52,7 +52,7 @@ bool tick = false;
 
 // for directory listing over Serial (optional)
 void listDir(fs::FS &fs, const char * dirname, uint8_t levels);
-const char *name(File& f);
+const char *name(file_t& f);
 
 //###############################################################
 
@@ -257,7 +257,7 @@ void audio_id3data(const char *info) {  //id3 metadata
 //###############################################################
 // optional functions for listing directory
 
-const char *name(File& f)
+const char *name(file_t& f)
 {
 #ifdef SDFATFS_USED
     static char buf[64];
@@ -274,7 +274,7 @@ void listDir(fs::FS &fs, const char * dirname, uint8_t levels) {
     char path[256] = "";    // muss mit 0 initialisiert sein
     int len = 0;            // muss für SD-Lib mit 0 initialisiert sein
     
-    File root;
+    file_t root;
     
     int mode = 2;            
    #ifdef SDFATFS_USED 
@@ -298,10 +298,10 @@ void listDir(fs::FS &fs, const char * dirname, uint8_t levels) {
     Serial.printf("Listing directory: %s (I%d)\n", dirname, root.dirIndex());
     while (true) {
        #ifdef SDFATFS_USED
-        File file;
+        file_t file;
         file.openNext(&root, O_RDONLY);
        #else   
-        File file = root.openNextFile();
+        file_t file = root.openNextFile();
        #endif
         while ( file ) {
            #ifdef SDFATFS_USED

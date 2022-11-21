@@ -21,7 +21,7 @@ void DirPlay::init_dir_stack(unsigned int size) {
 size_t DirPlay::next_entry(entry_type_t type, dir_info_t *entry_info, int *entry_pos) {
     size_t entry_name_len;
     int file_name_pos;
-    File f;
+    file_t f;
 
     if ( entry_info->index == uint16_t(-1) )
         cur_dir_file.rewind();
@@ -133,7 +133,7 @@ int DirPlay::NextFile(const char **file_path_ptr, bool next_dir) {
 bool DirPlay::Config(const char *path, const char *root_path, int max_dir_depth) {
     char *p;
     int i, pos;
-    File tmp_file;
+    file_t tmp_file;
     dir_info_t dinf;
 
     DBG("Config in: path=%s root=%s\n", path, root_path ? root_path : "<>");
