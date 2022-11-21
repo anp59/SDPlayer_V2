@@ -6,6 +6,7 @@
  *      Author: Wolle (schreibfaul1)
  */
 
+// defines set in platformio.ini
 //#define SDFATFS_USED  // activate for SdFat
 //#define SDFAT_FILE_TYPE 1   // * 1 for FAT16/FAT32, 2 for exFAT, 3 for FAT16/FAT32 and exFAT.
                             // for 2/3 data type for audiofile.size() and positions must be uint64_t
@@ -34,10 +35,6 @@
 #else
     #include <SdFat.h>  // https://github.com/greiman/SdFat
 
-    // set SDFAT_FILE_TYPE in SdFatConfig.h
-    // aktuell nur FILE_TYPE 1 verwendbar. 
-    // Fuer 2 und 3 muessen Datentypen fuer fileSize usw. auf 64 Bit angepasst werden
-    // typedefs hier notwendig, da Mechanismus hinter __has_include(<FS.h>) in SdFat.h nicht korrekt funktioniert
     #if SDFAT_FILE_TYPE == 1
         typedef File32 file_t;
     #elif SDFAT_FILE_TYPE == 2
