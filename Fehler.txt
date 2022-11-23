@@ -2,7 +2,7 @@ Vermutung:
 Fehler in Audio.cpp: Dekodierung ID3-Daten Version 2.2
 (mp3-Datei beinhaltet eingebettetes Cover-Bild)
 
-Buil with SdFat
+Build with SdFat (src/test)
 -------------------------------------------------------------------------------------
 >>> Play /Musik/Gretel/01 La mamma morta.mp3
 info        buffers freed, free Heap: 276280 bytes
