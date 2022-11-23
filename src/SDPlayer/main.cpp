@@ -121,7 +121,7 @@ void setup() {
     encoder.setCount(enc_val < MIN_VOLUME ? MIN_VOLUME : enc_val);
     encoder.setFilter(1023); // debouncing filter (0...1023)    
     
-    //if ( !prefs.getString(prefs_key_path, last_filepath, sizeof(last_filepath)) )
+    if ( !prefs.getString(prefs_key_path, last_filepath, sizeof(last_filepath)) )
         strcpy(last_filepath, rootpath);
 
     if ( !dplay.Config(last_filepath, rootpath, maxDirDepth) ) {   // dirdepth = 1, all files from rootpath plus one subdir will be selected
@@ -137,8 +137,6 @@ void setup() {
     dplay.SetLoopMode(true);
     digitalWrite(MAX98357A_SD, HIGH); // MAX98357A SD-Mode left channel
     Serial.println(last_filepath);
-    //audio.connecttoFS(SD, "/Musik/Gretel/01 La mamma morta.mp3");
-    //audio.connecttoFS(SD, "/Musik / J.Strauss/11 Strauss, Jr(J) - Kaiser - Walzer.mp3");
     PlayNextFile(&ptrCurrentFile);
 }
 
