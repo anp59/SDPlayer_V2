@@ -16,9 +16,7 @@
 #include "Arduino.h"
 #include "WiFiMulti.h"
 #include "Audio.h"
-#include "SPI.h"
-#include "SD.h"
-#include "FS.h"
+
 
 // Digital I/O used
 #define SD_CS 5
@@ -48,10 +46,14 @@ void setup()
     pinMode(MAX98357A_SD, OUTPUT);
     digitalWrite(MAX98357A_SD, LOW); // mute
 
+#ifndef SDFATFS_USED
     SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
     SPI.setFrequency(25000000); // 25 MHz
+#endif    
     Serial.begin(115200);
+    while ( !Serial );
     SD.begin(SD_CS);
+
     // WiFi.mode(WIFI_STA);
     // wifiMulti.addAP(ssid.c_str(), password.c_str());
     // wifiMulti.run();
@@ -70,10 +72,10 @@ void setup()
     listDir(SD, "/", 10);
 
     // audio.connecttoFS(SD, "test.mp3");
-    audio.connecttoFS(SD, "/Musik/Gretel/01 La mamma morta.mp3"); // ESP32: Guru Meditation Error: Core  1 panic'ed (LoadStoreError). Exception was unhandled.
+    //audio.connecttoFS(SD, "/Musik/Gretel/01 La mamma morta.mp3"); // ESP32: Guru Meditation Error: Core  1 panic'ed (LoadStoreError). Exception was unhandled.
     // audio.connecttoFS(SD, "/Musik/Gretel/01 Sempre libera.mp3"); // ESP32: Guru Meditation Error: Core  1 panic'ed (LoadStoreError). Exception was unhandled.
-    // audio.connecttoFS(SD, "/Musik/Wiener Philharmoniker - New Year's Concert 2015/CD2/05. Annen-Polka, op.117.mp3");
-    // audio.connecttoFS(SD, "/Musik/Wiener Philharmoniker - New Year's Concert 2015/CD2/10. An der schönen blauen Donau, op.314.mp3");
+    //audio.connecttoFS(SD, "/Musik/Wiener Philharmoniker - New Year's Concert 2015/CD2/05. Annen-Polka, op.117.mp3");
+    audio.connecttoFS(SD, "/Musik/Wiener Philharmoniker - New Year's Concert 2015/CD2/10. An der schönen blauen Donau, op.314.mp3");
     // audio.connecttoFS(SD, "/Musik/André Rieu/Bal Du Siècle/02 España Cañi.mp3"); // file can't open because of incomplete character conversion of 'é')
     //    audio.connecttoFS(SD, "test.wav");
     

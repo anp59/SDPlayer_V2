@@ -616,10 +616,9 @@ bool Audio::setFileLoop(bool input){
 }
 //---------------------------------------------------------------------------------------------------------------------
 void Audio::UTF8toASCII(char* str){
-
-    // Translation table with current SdFat V2 version (UTF-8 character set support) no longer necessary.
-    /* #ifdef SDFATFS_USED
-        //UTF8->UTF16 (lowbyte)
+// Translation table with current SdFat V2 version (UTF-8 character set support) no longer necessary.
+#ifdef SDFATFS_USED
+/*         //UTF8->UTF16 (lowbyte)
         const uint8_t ascii[60] = {
         //129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148  // UTF8(C3)
         //                Ä    Å    Æ    Ç         É                                       Ñ                  // CHAR
@@ -630,7 +629,8 @@ void Audio::UTF8toASCII(char* str){
         //169, 170, 171, 172. 173. 174. 175, 176, 177, 179, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188
         //      ê    ë    ì         î    ï         ñ    ò         ô         ö              ù         û    ü
           000, 0xEA, 0xEB,0xEC, 000,0xEE,0xEB, 000,0xF1,0xF2, 000,0xF4, 000,0xF6, 000, 000,0xF9, 000,0xFB,0xFC};
-    #else */
+ */    
+#else
     const uint8_t ascii[60] = {
     //129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148  // UTF8(C3)
     //                Ä    Å    Æ    Ç         É                                       Ñ                  // CHAR
@@ -641,7 +641,6 @@ void Audio::UTF8toASCII(char* str){
     //169, 170, 171, 172. 173. 174. 175, 176, 177, 179, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188
     //      ê    ë    ì         î    ï         ñ    ò         ô         ö              ù         û    ü
       000, 136, 137, 141, 000, 140, 139, 000, 164, 149, 000, 147, 000, 148, 000, 000, 151, 000, 150, 129};
-/*#endif*/
 
     uint16_t i = 0, j=0, s = 0;
     bool f_C3_seen = false;
@@ -661,7 +660,10 @@ void Audio::UTF8toASCII(char* str){
         i++; j++;
     }
     str[j] = 0;
+#endif
 }
+
+
 //---------------------------------------------------------------------------------------------------------------------
 bool Audio::connecttoSD(const char* path, uint32_t resumeFilePos) {
     return connecttoFS(SD, path, resumeFilePos);
