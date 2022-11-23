@@ -121,7 +121,7 @@ void setup() {
     encoder.setCount(enc_val < MIN_VOLUME ? MIN_VOLUME : enc_val);
     encoder.setFilter(1023); // debouncing filter (0...1023)    
     
-    if ( !prefs.getString(prefs_key_path, last_filepath, sizeof(last_filepath)) )
+    //if ( !prefs.getString(prefs_key_path, last_filepath, sizeof(last_filepath)) )
         strcpy(last_filepath, rootpath);
 
     if ( !dplay.Config(last_filepath, rootpath, maxDirDepth) ) {   // dirdepth = 1, all files from rootpath plus one subdir will be selected
@@ -137,6 +137,8 @@ void setup() {
     dplay.SetLoopMode(true);
     digitalWrite(MAX98357A_SD, HIGH); // MAX98357A SD-Mode left channel
     Serial.println(last_filepath);
+    //audio.connecttoFS(SD, "/Musik/Gretel/01 La mamma morta.mp3");
+    //audio.connecttoFS(SD, "/Musik / J.Strauss/11 Strauss, Jr(J) - Kaiser - Walzer.mp3");
     PlayNextFile(&ptrCurrentFile);
 }
 
@@ -260,7 +262,7 @@ void audio_id3data(const char *info) {  //id3 metadata
 const char *name(file_t& f)
 {
 #ifdef SDFATFS_USED
-    static char buf[64];
+    static char buf[256];
     buf[0] = 0;
     if ( f ) 
         f.getName(buf, sizeof(buf));
@@ -270,89 +272,137 @@ const char *name(file_t& f)
 #endif
 }
 
-void listDir(fs::FS &fs, const char * dirname, uint8_t levels) {
-    char path[256] = "";    // muss mit 0 initialisiert sein
-    int len = 0;            // muss für SD-Lib mit 0 initialisiert sein
-    
+#ifdef SDFATFS_USED
+void listDir(fs::FS &fs, const char *dirname, uint8_t levels)
+{
+    char path[256] = ""; // muss mit 0 initialisiert sein
+    int len = 0;         // muss für SD-Lib mit 0 initialisiert sein
     file_t root;
-    
-    int mode = 2;            
-   #ifdef SDFATFS_USED 
-    root.open(dirname);    
-   #else  
-    root = fs.open(dirname);      
-   #endif      
-    if ( !root ) {
+    int mode = 2;
+
+    root.open(dirname);
+    if (!root)
+    {
         Serial.println("Failed to open directory");
         return;
     }
-   #ifdef SDFATFS_USED 
-    if ( !root.isDir() ) {
-   #else   
-    if( !root.isDirectory() ) {
-   #endif   
+    if (!root.isDir())
+    {
         Serial.println("Not a directory");
         return;
     }
     Serial.println("----------------------------------------------");
     Serial.printf("Listing directory: %s (I%d)\n", dirname, root.dirIndex());
-    while (true) {
-       #ifdef SDFATFS_USED
+
+    while (true)
+    {
         file_t file;
         file.openNext(&root, O_RDONLY);
-       #else   
-        file_t file = root.openNextFile();
-       #endif
-        while ( file ) {
-           #ifdef SDFATFS_USED
-            if ( file.isDir() && mode == 1 ) {
-           #else   
-            if ( file.isDirectory() && mode == 1 ) {
-           #endif        
-                if ( file.isHidden() ) 
-                    Serial.print("*");                
+        while (file)
+        {
+            if (file.isDir() && mode == 1)
+            {
+                if (file.isHidden())
+                    Serial.print("*");
                 Serial.print("DIR : ");
                 Serial.printf("%s (L%d - I%d)\n", name(file), levels, file.dirIndex());
-                if(levels){
-                    // nur bei SdFat - kompletten pfad für file rekursiv weitergeben 
-                    if ( (name(file))[0] != '/' ) {
-                        strcpy(path, dirname); 
+                if (levels)
+                {
+                    // nur bei SdFat - kompletten pfad für file rekursiv weitergeben
+                    if ((name(file))[0] != '/')
+                    {
+                        strcpy(path, dirname);
                         len = strlen(path);
-                        if ( !(len == 1 && path[0] == '/') )    // not root (/) 
-                            path[len++] = '/'; // ohne abschliessende 0
+                        if (!(len == 1 && path[0] == '/')) // not root (/)
+                            path[len++] = '/';             // ohne abschliessende 0
                     }
-                    strcpy(path+len, name(file));
-                    listDir(fs, path, levels -1);
+                    strcpy(path + len, name(file));
+                    listDir(fs, path, levels - 1);
                 }
-            } 
-           #ifdef SDFATFS_USED
-            if ( !file.isDir() && mode == 2 ) {
-           #else   
-            if ( !file.isDirectory() && mode == 2 ) {
-           #endif
+            }
+
+            if (!file.isDir() && mode == 2)
+            {
                 if (file.isHidden())
                     Serial.print("*");
                 Serial.print("  FILE: ");
                 Serial.printf("%s (L%d - I%d)\n", name(file), levels, file.dirIndex());
-                //Serial.print("  SIZE: ");
-                //Serial.println(file.size());
+                // Serial.print("  SIZE: ");
+                // Serial.println(file.size());
             }
-           #ifdef SDFATFS_USED
             file.close();
             file.openNext(&root, O_RDONLY);
-           #else   
-            file = root.openNextFile();
-           #endif
         }
         mode--;
-        if ( !mode ) {
+        if (!mode)
+        {
             root.close();
             break;
         }
-       #ifdef SDFATFS_USED
-        if ( root.isDir() ) root.rewind();
-       #else
-        root.rewindDirectory();
-       #endif 
+
+        if (root.isDir())
+            root.rewind();
     }
 }
+#else
+void listDir(fs::FS &fs, const char *dirname, uint8_t levels)
+{
+    char path[256] = ""; // muss mit 0 initialisiert sein
+    int len = 0;         // muss für SD-Lib mit 0 initialisiert sein
+    file_t root;
+    int mode = 2;
+
+    root = fs.open(dirname);
+    if (!root)
+    {
+        Serial.println("Failed to open directory");
+        return;
+    }
+    if (!root.isDirectory())
+    {
+        Serial.println("Not a directory");
+        return;
+    }
+    Serial.println("----------------------------------------------");
+    Serial.printf("Listing directory: %s\n", dirname);
+    while (true)
+    {
+        file_t file = root.openNextFile();
+        while (file)
+        {
+            if (file.isDirectory() && mode == 1)
+            {
+                Serial.print("DIR : ");
+                Serial.printf("%s (L%d)\n", name(file), levels);
+                if (levels)
+                {
+                    // nur bei SdFat - kompletten pfad für file rekursiv weitergeben
+                    if ((name(file))[0] != '/')
+                    {
+                        strcpy(path, dirname);
+                        len = strlen(path);
+                        if (!(len == 1 && path[0] == '/')) // not root (/)
+                            path[len++] = '/';             // ohne abschliessende 0
+                    }
+                    strcpy(path + len, name(file));
+                    listDir(fs, path, levels - 1);
+                }
+            }
+            if (!file.isDirectory() && mode == 2)
+            {
+                Serial.print("  FILE: ");
+                Serial.printf("%s (L%d)\n", name(file), levels);
+            }
+            file.close();
+            file = root.openNextFile();
+        }
+        mode--;
+        if (!mode)
+        {
+            root.close();
+            break;
+        }
+        root.rewindDirectory();
+    }
+}
+#endif // #ifdef SDFATFS_USED

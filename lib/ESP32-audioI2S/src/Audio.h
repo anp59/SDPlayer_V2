@@ -6,11 +6,16 @@
  *      Author: Wolle (schreibfaul1)
  */
 
-// defines set in platformio.ini
-//#define SDFATFS_USED  // activate for SdFat
-//#define SDFAT_FILE_TYPE 1   // * 1 for FAT16/FAT32, 2 for exFAT, 3 for FAT16/FAT32 and exFAT.
-                            // for 2/3 data type for audiofile.size() and positions must be uint64_t
-//#define USE_UTF8_LONG_NAMES 1
+/*
+    Audio.h / Audio.cpp have been modified by anp59, 21.11.2022
+    SdFat V2 with UTF-8 long filenames:
+*/    
+// These options can be set in SdFatConfig.h, platformio.ini or makefile!
+//#define SDFATFS_USED          // activate SdFat
+//#define USE_UTF8_LONG_NAMES 1 // if not set, only ASCII filenames are allowed with SdFat
+//#define SDFAT_FILE_TYPE 1     // 1 for FAT16/FAT32, 2 for exFAT, 3 for FAT16/FAT32 and exFAT.
+                                // for values 2 and 3, the data types for file size and 
+                                // file positions must be changed to uint64_t
 
 #pragma once
 #pragma GCC optimize ("Ofast")
@@ -31,7 +36,7 @@
     #include <SPIFFS.h>
     #include <FS.h>
     #include <FFat.h>
-    #define FILE_CLASS File
+    typedef File file_t;
 #else
     #include <SdFat.h>  // https://github.com/greiman/SdFat
 

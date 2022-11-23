@@ -1,0 +1,123 @@
+Vermutung: 
+Fehler in Audio.cpp: Dekodierung ID3-Daten Version 2.2
+(mp3-Datei beinhaltet eingebettetes Cover-Bild)
+
+Buil with SdFat
+-------------------------------------------------------------------------------------
+>>> Play /Musik/Gretel/01 La mamma morta.mp3
+info        buffers freed, free Heap: 276280 bytes
+info        Reading file: "/Musik/Gretel/01 La mamma morta.mp3"
+info        audioname=/Musik/Gretel/01 La mamma morta.mp3
+info        MP3Decoder has been initialized, free Heap: 252920 bytes
+info        Content-Length: 4209541
+info        ID3 framesSize: 112444
+info        ID3 version: 2.2
+id3data     Title/Songname/Content description: La mamma morta
+id3data     Lead artist(s)/Lead performer(s)/Soloist(s)/Performing group: Callas
+id3data     Track number/Position in set: 1
+id3data     Content type: (103)P
+id3data     Attached picture: PNG
+info        Audio-Length: 4097097
+info        stream ready
+info        syncword not found
+info        syncword found at pos 4
+info        syncword found at pos 1112
+info        syncword found at pos 196
+
+assert failed: xQueueGenericSend queue.c:821 (!( ( pvItemToQueue == ((void *)0) ) && ( pxQueue->uxItemSize != ( UBaseType_t ) 0U ) ))
+
+
+Backtrace:0x40083af1:0x3ffb21c00x4008884d:0x3ffb21e0 0x4008d99d:0x3ffb2200 0x4008923e:0x3ffb2330 0x4012b255:0x3ffb2370 0x400d51e1:0x3ffb2390 0x400d4bb9:0x3ffb23b0 0x400d4fe6:0x3ffb23d0 0x400d50f9:0x3ffb23f0 0x400d3a12:0x3ffb2410 0x400dbf45:0x3ffb2440 0x400dfaf8:0x3ffb26c0 0x400d2f84:0x3ffb26e0 0x400eae3d:0x3ffb2820 
+
+  #0  0x40083af1:0x3ffb21c0 in panic_abort at /Users/ficeto/Desktop/ESP32/ESP32S2/esp-idf-public/components/esp_system/panic.c:402
+  #1  0x4008884d:0x3ffb21e0 in esp_system_abort at /Users/ficeto/Desktop/ESP32/ESP32S2/esp-idf-public/components/esp_system/esp_system.c:128
+  #2  0x4008d99d:0x3ffb2200 in __assert_func at /Users/ficeto/Desktop/ESP32/ESP32S2/esp-idf-public/components/newlib/assert.c:85
+  #3  0x4008923e:0x3ffb2330 in xQueueGenericSend at /Users/ficeto/Desktop/ESP32/ESP32S2/esp-idf-public/components/freertos/queue.c:821 (discriminator 2)       
+  #4  0x4012b255:0x3ffb2370 in SPIClass::endTransaction() at C:/Users/ANP/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src/SPI.cpp:194      
+  #5  0x400d51e1:0x3ffb2390 in SdSpiArduinoDriver::deactivate() at .pio/libdeps/esp32dev/SdFat/src/SpiDriver/SdSpiESP.cpp:48
+  #6  0x400d4bb9:0x3ffb23b0 in SharedSpiCard::spiDeactivate() at .pio/libdeps/esp32dev/SdFat/src/SdCard/SdSpiCard.h:312
+      (inlined by) SharedSpiCard::spiStop() at .pio/libdeps/esp32dev/SdFat/src/SdCard/SdSpiCard.cpp:564
+      (inlined by) SharedSpiCard::spiStop() at .pio/libdeps/esp32dev/SdFat/src/SdCard/SdSpiCard.cpp:559
+  #7  0x400d4fe6:0x3ffb23d0 in SharedSpiCard::readStop() at .pio/libdeps/esp32dev/SdFat/src/SdCard/SdSpiCard.cpp:536
+  #8  0x400d50f9:0x3ffb23f0 in DedicatedSpiCard::readSectors(unsigned int, unsigned char*, unsigned int) at .pio/libdeps/esp32dev/SdFat/src/SdCard/SdSpiCard.cpp:738
+      (inlined by) DedicatedSpiCard::readSectors(unsigned int, unsigned char*, unsigned int) at .pio/libdeps/esp32dev/SdFat/src/SdCard/SdSpiCard.cpp:724       
+  #9  0x400d3a12:0x3ffb2410 in FsCache::cacheSafeRead(unsigned int, unsigned char*, unsigned int) at .pio/libdeps/esp32dev/SdFat/src/FatLib/../common/FsCache.h:86
+      (inlined by) FatPartition::cacheSafeRead(unsigned int, unsigned char*, unsigned int) at .pio/libdeps/esp32dev/SdFat/src/FatLib/FatPartition.h:205        
+      (inlined by) FatFile::read(void*, unsigned int) at .pio/libdeps/esp32dev/SdFat/src/FatLib/FatFile.cpp:854
+  #10 0x400dbf45:0x3ffb2440 in Audio::processLocalFile() at lib/ESP32-audioI2S/src/Audio.cpp:2874
+  #11 0x400dfaf8:0x3ffb26c0 in Audio::processLocalFile() at lib/ESP32-audioI2S/src/Audio.h:285
+      (inlined by) Audio::loop() at lib/ESP32-audioI2S/src/Audio.cpp:2385
+  #12 0x400d2f84:0x3ffb26e0 in loop() at src/main.cpp:171
+  #13 0x400eae3d:0x3ffb2820 in loopTask(void*) at C:/Users/ANP/.platformio/packages/framework-arduinoespressif32/cores/esp32/main.cpp:50
+
+
+
+
+ELF file SHA256: 0000000000000000
+
+Rebooting...
+ets Jun  8 2016 00:22:57
+
+rst:0xc (SW_CPU_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:1184
+load:0x40078000,len:13132
+load:0x40080400,len:3036
+entry 0x400805e4
+
+
+
+
+build with Arduino FS (src/test)
+----------------------------------------------------------------
+info        PSRAM not found, inputBufferSize: 6399 bytes
+info        buffers freed, free Heap: 245812 bytes
+info        Reading file: "/Musik/Gretel/01 La mamma morta.mp3"
+info        audioname=/Musik/Gretel/01 La mamma morta.mp3
+info        MP3Decoder has been initialized, free Heap: 218072 bytes
+info        Content-Length: 4209541
+info        ID3 framesSize: 112444
+info        ID3 version: 2.2
+id3data     Title/Songname/Content description: La mamma morta
+id3data     Lead artist(s)/Lead performer(s)/Soloist(s)/Performing group: Callas
+id3data     Track number/Position in set: 1
+id3data     Content type: (103)P
+id3data     Attached picture: PNG
+Guru Meditation Error: Core  1 panic'ed (LoadStoreError). Exception was unhandled.
+
+Core  1 register dump:
+PC      : 0x400d61eb  PS      : 0x00060c30  A0      : 0x800da369  A1      : 0x3ffb2290
+A2      : 0x3ffc1330  A3      : 0x40a25383  A4      : 0x3ffc4330  A5      : 0x3ffc1830  
+A6      : 0x5f8b0dca  A7      : 0x0000000a  A8      : 0x00000640  A9      : 0x3ffb24e0
+A10     : 0x00000640  A11     : 0x00000001  A12     : 0x00000640  A13     : 0x3ffb7054  
+A14     : 0x007b8b10  A15     : 0x003fffff  SAR     : 0x0000001b  EXCCAUSE: 0x00000003
+EXCVADDR: 0x40a25385  LBEG    : 0x40086644  LEND    : 0x4008665a  LCOUNT  : 0x00000000  
+
+
+Backtrace:0x400d61e8:0x3ffb22900x400da366:0x3ffb2510 0x400db111:0x3ffb2540 0x400ded24:0x3ffb27c0 0x400d324a:0x3ffb27e0 0x400ea539:0x3ffb2820 
+
+  #0  0x400d61e8:0x3ffb2290 in Audio::read_ID3_Header(unsigned char*, unsigned int) at lib/ESP32-audioI2S/src/Audio.cpp:1681
+  #1  0x400da366:0x3ffb2510 in Audio::readAudioHeader(unsigned int) at lib/ESP32-audioI2S/src/Audio.cpp:1127
+  #2  0x400db111:0x3ffb2540 in Audio::processLocalFile() at lib/ESP32-audioI2S/src/Audio.cpp:2891
+  #3  0x400ded24:0x3ffb27c0 in Audio::loop() at lib/ESP32-audioI2S/src/Audio.cpp:2385
+  #4  0x400d324a:0x3ffb27e0 in loop() at src/test/main.cpp:88
+  #5  0x400ea539:0x3ffb2820 in loopTask(void*) at C:/Users/ANP/.platformio/packages/framework-arduinoespressif32/cores/esp32/main.cpp:50
+
+
+
+
+ELF file SHA256: 0000000000000000
+
+Rebooting...
+ets Jun  8 2016 00:22:57
+
+rst:0xc (SW_CPU_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:1184
+load:0x40078000,len:13132
+load:0x40080400,len:3036
+entry 0x400805e4

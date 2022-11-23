@@ -617,19 +617,20 @@ bool Audio::setFileLoop(bool input){
 //---------------------------------------------------------------------------------------------------------------------
 void Audio::UTF8toASCII(char* str){
 
-#ifdef SDFATFS_USED
-    //UTF8->UTF16 (lowbyte)
-    const uint8_t ascii[60] = {
-    //129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148  // UTF8(C3)
-    //                Ä    Å    Æ    Ç         É                                       Ñ                  // CHAR
-      000, 000, 000, 0xC4, 143, 0xC6,0xC7, 000,0xC9,000, 000, 000, 000, 000, 000, 000, 0xD1, 000, 000, 000, // ASCII (Latin1)
-    //149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168
-    //      Ö                             Ü              ß    à                   ä    å    æ         è
-      000, 0xD6,000, 000, 000, 000, 000, 0xDC, 000, 000, 0xDF,0xE0, 000, 000, 000,0xE4,0xE5,0xE6, 000,0xE8,
-    //169, 170, 171, 172. 173. 174. 175, 176, 177, 179, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188
-    //      ê    ë    ì         î    ï         ñ    ò         ô         ö              ù         û    ü
-      000, 0xEA, 0xEB,0xEC, 000,0xEE,0xEB, 000,0xF1,0xF2, 000,0xF4, 000,0xF6, 000, 000,0xF9, 000,0xFB,0xFC};
-#else
+    // Translation table with current SdFat V2 version (UTF-8 character set support) no longer necessary.
+    /* #ifdef SDFATFS_USED
+        //UTF8->UTF16 (lowbyte)
+        const uint8_t ascii[60] = {
+        //129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148  // UTF8(C3)
+        //                Ä    Å    Æ    Ç         É                                       Ñ                  // CHAR
+          000, 000, 000, 0xC4, 143, 0xC6,0xC7, 000,0xC9,000, 000, 000, 000, 000, 000, 000, 0xD1, 000, 000, 000, // ASCII (Latin1)
+        //149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168
+        //      Ö                             Ü              ß    à                   ä    å    æ         è
+          000, 0xD6,000, 000, 000, 000, 000, 0xDC, 000, 000, 0xDF,0xE0, 000, 000, 000,0xE4,0xE5,0xE6, 000,0xE8,
+        //169, 170, 171, 172. 173. 174. 175, 176, 177, 179, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188
+        //      ê    ë    ì         î    ï         ñ    ò         ô         ö              ù         û    ü
+          000, 0xEA, 0xEB,0xEC, 000,0xEE,0xEB, 000,0xF1,0xF2, 000,0xF4, 000,0xF6, 000, 000,0xF9, 000,0xFB,0xFC};
+    #else */
     const uint8_t ascii[60] = {
     //129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148  // UTF8(C3)
     //                Ä    Å    Æ    Ç         É                                       Ñ                  // CHAR
@@ -640,7 +641,7 @@ void Audio::UTF8toASCII(char* str){
     //169, 170, 171, 172. 173. 174. 175, 176, 177, 179, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188
     //      ê    ë    ì         î    ï         ñ    ò         ô         ö              ù         û    ü
       000, 136, 137, 141, 000, 140, 139, 000, 164, 149, 000, 147, 000, 148, 000, 000, 151, 000, 150, 129};
-#endif
+/*#endif*/
 
     uint16_t i = 0, j=0, s = 0;
     bool f_C3_seen = false;
@@ -2847,6 +2848,7 @@ void Audio::processLocalFile() {
     static bool f_fileDataComplete;
     static uint32_t byteCounter;                                // count received data
     uint32_t availableBytes = 0;
+    bool fileError = false; // used for SdFat
 
     if(m_f_firstCall) {  // runs only one time per connection, prepare for start
         m_f_firstCall = false;
@@ -2878,14 +2880,20 @@ void Audio::processLocalFile() {
         InBuff.bytesWritten(bytesAddedToBuffer);
     }
 
-    if(!f_stream){
-        if(m_controlCounter != 100) {
-              if(InBuff.bufferFilled() > maxFrameSize){ // read the file header first
-                InBuff.bytesWasRead(readAudioHeader(InBuff.bufferFilled()));
+    // bytesAddedToBuffer == -1 in case of read error, ==0 for eof
+    fileError = (bytesAddedToBuffer == -1);
+
+    if (!f_stream)
+        {
+            if (m_controlCounter != 100)
+            {
+                if (InBuff.bufferFilled() > maxFrameSize)
+                { // read the file header first
+                    InBuff.bytesWasRead(readAudioHeader(InBuff.bufferFilled()));
+                }
+                return;
             }
-            return;
-        }
-        else{
+            else{
             f_stream = true;
             AUDIO_INFO("stream ready");
             log_i("m_audioDataStart %d", m_audioDataStart);
@@ -2901,7 +2909,7 @@ void Audio::processLocalFile() {
     }
 
     // end of file reached? - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if(f_fileDataComplete && InBuff.bufferFilled() < InBuff.getMaxBlockSize()){
+    if(fileError || (f_fileDataComplete && InBuff.bufferFilled() < InBuff.getMaxBlockSize())){
         if(InBuff.bufferFilled()){
             if(!readID3V1Tag()){
                 int bytesDecoded = sendBytes(InBuff.getReadPtr(), InBuff.bufferFilled());
@@ -2910,21 +2918,22 @@ void Audio::processLocalFile() {
         }
         playI2Sremains();
 
-        if(m_f_loop  && f_stream){  //eof
-            AUDIO_INFO("loop from: %u to: %u", getFilePos(), m_audioDataStart); //TEST loop
-            setFilePos(m_audioDataStart);
-            if(m_codec == CODEC_FLAC) FLACDecoderReset();
-            /*
-                The current time of the loop mode is not reset,
-                which will cause the total audio duration to be exceeded.
-                For example: current time   ====progress bar====>  total audio duration
-                                3:43        ====================>        3:33
-            */
-            m_audioCurrentTime = 0;
-            byteCounter = m_audioDataStart;
-            f_fileDataComplete = false;
-            return;
-        } //TEST loop
+        if (!fileError) 
+            if(m_f_loop  && f_stream){  //eof
+                AUDIO_INFO("loop from: %u to: %u", getFilePos(), m_audioDataStart); //TEST loop
+                setFilePos(m_audioDataStart);
+                if(m_codec == CODEC_FLAC) FLACDecoderReset();
+                /*
+                    The current time of the loop mode is not reset,
+                    which will cause the total audio duration to be exceeded.
+                    For example: current time   ====progress bar====>  total audio duration
+                                    3:43        ====================>        3:33
+                */
+                m_audioCurrentTime = 0;
+                byteCounter = m_audioDataStart;
+                f_fileDataComplete = false;
+                return;
+            } //TEST loop
 
         //char *afn = strdup(audioName);
         stopSong();
@@ -2932,7 +2941,7 @@ void Audio::processLocalFile() {
         if(m_codec == CODEC_AAC)   AACDecoder_FreeBuffers();
         if(m_codec == CODEC_M4A)   AACDecoder_FreeBuffers();
         if(m_codec == CODEC_FLAC) FLACDecoder_FreeBuffers();
-        AUDIO_INFO("End of file \"%s\"", audioName);
+        AUDIO_INFO(fileError ? "Read error \"%s\"" : "End of file \"%s\"", audioName);
         if(audio_eof_mp3) audio_eof_mp3(audioName);
         //if(afn) {free(afn); afn = NULL;}
         return;
