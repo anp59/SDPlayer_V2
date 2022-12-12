@@ -95,13 +95,13 @@ public:
 private:
     typedef struct dir_info {
         int pos;
-        uint16_t index;
+        uint32_t index;
         dir_info() { init(); };
-        dir_info(int p, int i) : pos(p), index(i) {}
+        dir_info(int p, uint32_t i) : pos(p), index(i) {}
         void print(print_t* pr) { pr->printf("(pos=%d / index=%u)\n", pos, index); }
-        void init() { pos = 0; index = uint16_t(-1); }
+        void init() { pos = 0; index = -1; }
     } dir_info_t;
-    
+
     bool loop_play = false;
 
     char cur_path[256];

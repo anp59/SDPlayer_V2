@@ -23,14 +23,14 @@ size_t DirPlay::next_entry(entry_type_t type, dir_info_t *entry_info, int *entry
     int file_name_pos;
     File f;
 
-    if ( entry_info->index == uint16_t(-1) )
+    if ( entry_info->index == -1 )
         cur_dir_file.rewind();
     else
         if ( f.open(&cur_dir_file, entry_info->index, O_RDONLY) )
             f.close();
     f.openNext(&cur_dir_file, O_RDONLY);
-    
-    DBG("NextEntry in: cur_path=%s, cur_dir_len=%d, type=%s, cur_dir_file %sopen, openNext %sfound\n", cur_path, cur_dir_path_len, type==FILE_ENTRY?"FILE_ENTRY":"DIR_ENTRY", cur_dir_file?"":" not", f?"":"not ");
+
+    DBG("NextEntry in: cur_path=%s, cur_dir_len=%d, type=%s, index=%u, cur_dir_file %sopen, openNext %sfound\n", cur_path, cur_dir_path_len, type == FILE_ENTRY ? "FILE_ENTRY" : "DIR_ENTRY", entry_info->index, cur_dir_file ? "" : " not", f ? "" : "not ");
 
     while ( f ) {
         entry_name_len = 0;
@@ -86,7 +86,7 @@ int DirPlay::NextFile(const char **file_path_ptr, bool next_dir) {
                 continue;
             dir_stack->push(dinf_dir);
             cur_dir_path_len = cur_path_len;
-            DBG("Down path-< %s cur_path_len=%d (push info: %d/%d)\n", cur_path, cur_path_len, dinf_dir.pos, dinf_dir.index);
+            DBG("Down path-< %s cur_path_len=%d (push info: %d/%u)\n", cur_path, cur_path_len, dinf_dir.pos, dinf_dir.index);
             dinf_file.init();
             dinf_dir.init();
             cur_dir_file.close();
@@ -175,7 +175,7 @@ bool DirPlay::Config(const char *path, const char *root_path, int max_dir_depth)
             if ( p == cur_path ) *(p+1) = 0; else *p = 0;
             cur_path_len = p - cur_path;
         }
-        DBG("last_file=%s, index=%d\n", p+1, dinf_file.index);
+        DBG("last_file=%s, index=%u\n", p+1, dinf_file.index);
     }
     // pos at first char after root_path, save details (dir_info_t) of all directories on the stack
     pos = root_path_len > 1 ? root_path_len+1 : root_path_len; // pos at first char after root_path

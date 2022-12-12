@@ -2,14 +2,12 @@
  * Audio.h
  *
  *  Created on: Oct 28,2018
- *  Updated on: Nov 17,2022
+ *  Updated on: Dec 04,2022
  *      Author: Wolle (schreibfaul1)
  */
 
-//#define SDFATFS_USED  // activate for SdFat
-//#define SDFAT_FILE_TYPE 1   // * 1 for FAT16/FAT32, 2 for exFAT, 3 for FAT16/FAT32 and exFAT.
-                            // for 2/3 data type audiofile.size() must be uint65_t
-//#define USE_UTF8_LONG_NAMES 1
+#define SDFATFS_USED  // activate for SdFat
+
 
 #pragma once
 #pragma GCC optimize ("Ofast")
@@ -25,33 +23,28 @@
 #include <driver/i2s.h>
 
 #ifdef SDFATFS_USED
-#include <SdFat.h>  // https://github.com/greiman/SdFat
+    //#define USE_UTF8_LONG_NAMES 1
+    //#define SDFAT_FILE_TYPE 1
+    #undef __has_include
+    #include <SdFat.h> // https://github.com/greiman/SdFat
+    #define __has_include
 #else
-#include <SD.h>
-#include <SD_MMC.h>
-#include <SPIFFS.h>
-#include <FS.h>
-#include <FFat.h>
+    #include <SD.h>
+    #include <SD_MMC.h>
+    #include <SPIFFS.h>
+    #include <FS.h>
+    #include <FFat.h>
 #endif // SDFATFS_USED
 
 
 #ifdef SDFATFS_USED
-// set SDFAT_FILE_TYPE in SdFatConfig.h
-// aktuell nur FILE_TYPE 1 verwendbar. 
-// Fuer 2 und 3 muessen Datentypen fuer fileSize usw. auf 64 Bit angepasst werden
+    // typedef File32 File;
+    // typedef FsFile File;
 
-#if SDFAT_FILE_TYPE == 1
-typedef File32 File;
-#elif SDFAT_FILE_TYPE == 2
-typedef ExFile File;
-#elif SDFAT_FILE_TYPE == 3
-typedef FsFile File;
-#endif
-
-namespace fs {
+    namespace fs {
     class FS : public SdFat {
     public:
-        bool begin(SdCsPin_t csPin = SS, uint32_t maxSck = SD_SCK_MHZ(25)) { return SdFat::begin(csPin, maxSck); }
+        bool begin(SdCsPin_t csPin = SS, uint32_t maxSck = SD_SCK_MHZ(16)) { return SdFat::begin(csPin, maxSck); }
     };
 
     class SDFATFS : public fs::FS {
@@ -68,11 +61,11 @@ namespace fs {
             return (uint64_t)clusterCount() * (uint64_t)bytesPerCluster();
         }
     };
-}
+}   // namespace fs
 
 extern fs::SDFATFS SD_SDFAT;
 
-using namespace fs;
+//using namespace fs;
 #define SD SD_SDFAT
 #endif //SDFATFS_USED
 
@@ -253,7 +246,6 @@ private:
     int  read_FLAC_Header(uint8_t *data, size_t len);
     int  read_ID3_Header(uint8_t* data, size_t len);
     int  read_M4A_Header(uint8_t* data, size_t len);
-    int  read_OGG_Header(uint8_t *data, size_t len);
     size_t process_m3u8_ID3_Header(uint8_t* packet);
     bool setSampleRate(uint32_t hz);
     bool setBitsPerSample(int bits);
@@ -261,7 +253,6 @@ private:
     bool setBitrate(int br);
     bool playChunk();
     bool playSample(int16_t sample[2]) ;
-    void playI2Sremains();
     int32_t Gain(int16_t s[2]);
     bool fill_InputBuf();
     void showstreamtitle(const char* ml);
@@ -284,8 +275,12 @@ private:
     uint16_t readMetadata(uint16_t b, bool first = false);
     size_t   chunkedDataTransfer(uint8_t* bytes);
     bool     readID3V1Tag();
-    void     slowStreamDetection(uint32_t inBuffFilled, uint32_t maxFrameSize);
-    void     lostStreamDetection(uint32_t bytesAvail);
+    boolean  streamDetection(uint32_t bytesAvail);
+    void     seek_m4a_stsz();
+    uint32_t m4a_correctResumeFilePos(uint32_t resumeFilePos);
+    uint32_t flac_correctResumeFilePos(uint32_t resumeFilePos);
+    uint32_t mp3_correctResumeFilePos(uint32_t resumeFilePos);
+
 
 //++++ implement several function with respect to the index of string ++++
     void trim(char *s) {
@@ -382,13 +377,15 @@ private:
 
     // some other functions
     size_t bigEndian(uint8_t* base, uint8_t numBytes, uint8_t shiftLeft = 8){
-        size_t result = 0;
-        if(numBytes < 1 || numBytes > 4) return 0;
+        uint64_t result = 0;
+        if(numBytes < 1 || numBytes > 8) return 0;
         for (int i = 0; i < numBytes; i++) {
                 result += *(base + i) << (numBytes -i - 1) * shiftLeft;
         }
-        return result;
+        if(result > SIZE_MAX) {log_e("range overflow"); result = 0;} // overflow
+        return (size_t)result;
     }
+
     bool b64encode(const char* source, uint16_t sourceLength, char* dest){
         size_t size = base64_encode_expected_len(sourceLength) + 1;
         char * buffer = (char *) malloc(size);
@@ -434,7 +431,7 @@ private:
 	}
 
 private:
-    const char *codecname[9] = {"unknown", "WAV", "MP3", "AAC", "M4A", "FLAC", "OGG", "OGG FLAC", "OPUS"};
+    const char *codecname[9] = {"unknown", "WAV", "MP3", "AAC", "M4A", "FLAC"};
     enum : int { APLL_AUTO = -1, APLL_ENABLE = 1, APLL_DISABLE = 0 };
     enum : int { EXTERNAL_I2S = 0, INTERNAL_DAC = 1, INTERNAL_PDM = 2 };
     enum : int { FORMAT_NONE = 0, FORMAT_M3U = 1, FORMAT_PLS = 2, FORMAT_ASX = 3, FORMAT_M3U8 = 4};
@@ -444,9 +441,8 @@ private:
                  FLAC_SEEK = 6, FLAC_VORBIS = 7, FLAC_CUESHEET = 8, FLAC_PICTURE = 9, FLAC_OKAY = 100};
     enum : int { M4A_BEGIN = 0, M4A_FTYP = 1, M4A_CHK = 2, M4A_MOOV = 3, M4A_FREE = 4, M4A_TRAK = 5, M4A_MDAT = 6,
                  M4A_ILST = 7, M4A_MP4A = 8, M4A_AMRDY = 99, M4A_OKAY = 100};
-    enum : int { OGG_BEGIN = 0, OGG_MAGIC = 1, OGG_HEADER = 2, OGG_FIRST = 3, OGG_AMRDY = 99, OGG_OKAY = 100};
     enum : int { CODEC_NONE = 0, CODEC_WAV = 1, CODEC_MP3 = 2, CODEC_AAC = 3, CODEC_M4A = 4, CODEC_FLAC = 5,
-                 CODEC_OGG = 6, CODEC_OGG_FLAC = 7, CODEC_OGG_OPUS = 8, CODEC_AACP = 9};
+                 CODEC_AACP = 6};
     enum : int { ST_NONE = 0, ST_WEBFILE = 1, ST_WEBSTREAM = 2};
     typedef enum { LEFTCHANNEL=0, RIGHTCHANNEL=1 } SampleIndex;
     typedef enum { LOWSHELF = 0, PEAKEQ = 1, HIFGSHELF =2 } FilterType;
@@ -477,7 +473,7 @@ private:
     std::vector<char*>    m_playlistURL;     // m3u8 streamURLs buffer
     std::vector<uint32_t> m_hashQueue;
 
-    const size_t    m_frameSizeWav  = 1024 * 8;
+    const size_t    m_frameSizeWav  = 1024;
     const size_t    m_frameSizeMP3  = 1600;
     const size_t    m_frameSizeAAC  = 1600;
     const size_t    m_frameSizeFLAC = 4096 * 4;
@@ -531,6 +527,8 @@ private:
     uint32_t        m_PlayingStartTime = 0;         // Stores the milliseconds after the start of the audio
     uint32_t        m_resumeFilePos = 0;            // the return value from stopSong() can be entered here
     uint16_t        m_m3u8_targetDuration = 10;     //
+    uint32_t        m_stsz_numEntries = 0;          // num of entries inside stsz atom (uint32_t)
+    uint32_t        m_stsz_position = 0;            // pos of stsz atom within file
     bool            m_f_metadata = false;           // assume stream without metadata
     bool            m_f_unsync = false;             // set within ID3 tag but not used
     bool            m_f_exthdr = false;             // ID3 extended header

@@ -28,6 +28,10 @@
 
 #define MIN_VOLUME  4
 
+const bool ENABLE_DEBUG_LOG = true;
+#define DBG(...) do if (ENABLE_DEBUG_LOG) printf("D# " __VA_ARGS__); while (0);
+
+
 Audio audio;
 DirPlay dplay;          // default without Config(): "/", dir_depth = 0
 Preferences prefs;
@@ -57,6 +61,7 @@ const char *name(File& f);
 //###############################################################
 
 // file filter for PlayNextFile() (set with Dirplay::SetFileFilter(...))
+// There is a check in ESP32-audioI2S, in cas of non audio file connecttoFS returns false
 bool isMusicFile(const char *filename, int len) {
     const char *p;
     if ( !len ) len = strlen(filename);
@@ -101,6 +106,7 @@ void setup() {
 
     Serial.begin(115200);
     while ( !Serial );
+    Serial.flush();
     Serial.println();
     
     if ( !SD.begin(SS, SD_SCK_MHZ(25)) ) {
@@ -123,7 +129,7 @@ void setup() {
     
     if ( !prefs.getString(prefs_key_path, last_filepath, sizeof(last_filepath)) )
         strcpy(last_filepath, rootpath);
-
+    DBG("EEPROM: last_filepath=%s\n", last_filepath)    
     if ( !dplay.Config(last_filepath, rootpath, maxDirDepth) ) {   // dirdepth = 1, all files from rootpath plus one subdir will be selected
         Serial.printf("Config failed! Ceck the path '%s' / root_path '%s'\nUsing rootpath instead of path!\n", last_filepath, rootpath);
         if ( !dplay.Config(rootpath, rootpath, maxDirDepth) ) { 
@@ -136,8 +142,8 @@ void setup() {
     dplay.SetFileFilter(isMusicFile);   // select only music files
     dplay.SetLoopMode(true);
     digitalWrite(MAX98357A_SD, HIGH); // MAX98357A SD-Mode left channel
-    Serial.println(last_filepath);
-    PlayNextFile(&ptrCurrentFile);
+
+    PlayNextFile(&ptrCurrentFile, false);
 }
 
 //###############################################################
@@ -295,7 +301,7 @@ void listDir(fs::FS &fs, const char * dirname, uint8_t levels) {
         return;
     }
     Serial.println("----------------------------------------------");
-    Serial.printf("Listing directory: %s (I%d)\n", dirname, root.dirIndex());
+    Serial.printf("Listing directory: %s (I%u)\n", dirname, root.dirIndex());
     while (true) {
        #ifdef SDFATFS_USED
         File file;
@@ -312,7 +318,7 @@ void listDir(fs::FS &fs, const char * dirname, uint8_t levels) {
                 if ( file.isHidden() ) 
                     Serial.print("*");                
                 Serial.print("DIR : ");
-                Serial.printf("%s (L%d - I%d)\n", name(file), levels, file.dirIndex());
+                Serial.printf("%s (L%d - I%u)\n", name(file), levels, file.dirIndex());
                 if(levels){
                     // nur bei SdFat - kompletten pfad für file rekursiv weitergeben 
                     if ( (name(file))[0] != '/' ) {
@@ -333,7 +339,7 @@ void listDir(fs::FS &fs, const char * dirname, uint8_t levels) {
                 if (file.isHidden())
                     Serial.print("*");
                 Serial.print("  FILE: ");
-                Serial.printf("%s (L%d - I%d)\n", name(file), levels, file.dirIndex());
+                Serial.printf("%s (L%d - I%u)\n", name(file), levels, file.dirIndex());
                 //Serial.print("  SIZE: ");
                 //Serial.println(file.size());
             }
