@@ -61,7 +61,7 @@ const char *name(File& f);
 //###############################################################
 
 // file filter for PlayNextFile() (set with Dirplay::SetFileFilter(...))
-// There is a check in ESP32-audioI2S, in cas of non audio file connecttoFS returns false
+// There is a check in ESP32-audioI2S, if file is no audio file, connecttoFS returns false
 bool isMusicFile(const char *filename, int len) {
     const char *p;
     if ( !len ) len = strlen(filename);
@@ -139,7 +139,7 @@ void setup() {
     } 
     
     //audio.setVolume(1);
-    dplay.SetFileFilter(isMusicFile);   // select only music files
+    //dplay.SetFileFilter(isMusicFile);   // select only music files - not required with ESP32-audioI2S lib
     dplay.SetLoopMode(true);
     digitalWrite(MAX98357A_SD, HIGH); // MAX98357A SD-Mode left channel
 
